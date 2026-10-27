@@ -1,32 +1,18 @@
 #include "SceneMatch.h"
 #include "../Game.h"
-#include "../AssetManager.h"
+#include "../Managers/AssetManager.h"
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <string>
 
 namespace {
-    bool loadFontFallback(sf::Font& font) {
-        const std::string candidates[] = {
-            "arial.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf",
-            "C:/Windows/Fonts/consola.ttf",
-            "C:/Program Files (x86)/ZinjaI/MinGW32-gcc6/arial.ttf",
-            "C:/Users/Lau/Documents/GitHub/cirujainvaders/arial.ttf"
-        };
-
-        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
-            if (font.loadFromFile(candidates[i])) {
-                return true;
-            }
-        }
-        return false;
+    bool loadProjectFont(sf::Font& font) {
+        return font.loadFromFile("Resources/Tr2n.ttf");
     }
 }
 
 SceneMatch::SceneMatch() {
-    if (!loadFontFallback(m_font))
+    if (!loadProjectFont(m_font))
     {
         return;
     }

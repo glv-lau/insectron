@@ -4,6 +4,7 @@
 #include "Scene.h"
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Text.hpp>
+#include <SFML/System/Vector2.hpp>
 
 class SceneOptions : public Scene {
 public:
@@ -16,6 +17,7 @@ public:
 
 private:
     void refreshLabels();
+    void updateLayout(const sf::Vector2u& windowSize);
 
     sf::Font m_font;
     sf::Text m_title;
@@ -26,7 +28,9 @@ private:
     sf::Text m_hudSizeText;
     sf::Text m_resolutionText;
     sf::Text m_fullscreenText;
+    sf::Vector2u m_layoutWindowSize;
     bool m_fontLoaded = false;
+    bool m_layoutInitialized = false;
     int m_selectedOption = 0;
     int m_masterVolume = 100;
     int m_musicVolume = 100;

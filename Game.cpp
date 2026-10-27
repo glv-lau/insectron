@@ -1,20 +1,17 @@
 #include "Game.h"
-#include "AudioManager.h"
+#include "Managers/AudioManager.h"
 #include "Entities/Entity.h"
+#include "SaveGame.h"
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/WindowStyle.hpp>
 #include <fstream>
 #include <sstream>
-#include <cstdio>
 #include <string>
 #include <algorithm>
 
 namespace {
     const std::string kConfigFile = "config.txt";
-    const std::string kSaveFile = "partida_guardada.txt";
-    const std::string kLegacySaveFile = "savegame.txt";
-
     int clampVolume(int value) {
         if (value < 0) return 0;
         if (value > 100) return 100;
@@ -33,7 +30,7 @@ Game::Game(Scene* scene, int score)
     , m_windowWidth(800)
     , m_windowHeight(600)
     , m_fullscreen(false)
-    , m_win(sf::VideoMode(800, 600), "Ciruja Invaders")
+    , m_win(sf::VideoMode(800, 600), "Insectron")
     , m_scene(scene)
 {
     m_win.setFramerateLimit(60);
@@ -43,15 +40,11 @@ Game::Game(Scene* scene, int score)
     setDisplaySettings(m_windowWidth, m_windowHeight, m_fullscreen);
     applyVolumeToAudio();
 
-    std::string initials;
-    int savedScore = 0;
-    int level = 1;
-    int wave = 0;
-    int lives = 3;
-    if (loadSaveGameFromFile(initials, savedScore, level, wave, lives)) {
+    if (SaveGameStore::load(m_savedGame, static_cast<float>(m_windowWidth),
+                            static_cast<float>(m_windowHeight))) {
         m_continueAvailable = true;
-        m_score = savedScore;
-        m_playerInitials = initials;
+        m_score = m_savedGame.score;
+        m_playerInitials = m_savedGame.initials;
     }
 }
 
@@ -145,7 +138,7 @@ void Game::setDisplaySettings(int width, int height, bool fullscreen) {
     const sf::Uint32 style = fullscreen ? sf::Style::Fullscreen : sf::Style::Default;
     m_win.create(sf::VideoMode(static_cast<unsigned int>(m_windowWidth),
                                static_cast<unsigned int>(m_windowHeight)),
-                 "Ciruja Invaders", style);
+                 "Insectron", style);
     m_win.setFramerateLimit(60);
     Entity::setWorldBounds(static_cast<float>(m_windowWidth),
                            static_cast<float>(m_windowHeight));
@@ -212,63 +205,20 @@ void Game::saveConfigToFile() const {
     output << "fullscreen=" << (m_fullscreen ? 1 : 0) << "\n";
 }
 
-bool Game::loadSaveGameFromFile(std::string& initials, int& score, int& level, int& wave, int& lives) const {
-    sf::Vector2f ignoredPosition(400.f, 520.f);
-    return loadSaveGameFromFile(initials, score, level, wave, lives, ignoredPosition);
-}
-
-bool Game::loadSaveGameFromFile(std::string& initials, int& score, int& level, int& wave,
-                                int& lives, sf::Vector2f& playerPosition) const {
-    std::ifstream input(kSaveFile.c_str());
-    if (!input.is_open()) {
-        input.open(kLegacySaveFile.c_str());
-    }
-    if (!input.is_open()) {
+bool Game::saveGameState(const SavedGame& state) {
+    if (!SaveGameStore::save(state, static_cast<float>(m_windowWidth),
+                             static_cast<float>(m_windowHeight))) {
         return false;
     }
-
-    initials.clear();
-    score = 0;
-    level = 1;
-    wave = 0;
-    lives = 3;
-    if (!(input >> initials >> score >> level >> wave >> lives)) {
-        return false;
-    }
-    if (initials.size() != 3 || score < 0 || level < 1 || wave < 0 || lives < 1 || lives > 5) {
-        return false;
-    }
-    playerPosition = sf::Vector2f(400.f, 520.f);
-    float savedX = 0.f;
-    float savedY = 0.f;
-    if (input >> savedX >> savedY) {
-        playerPosition.x = std::max(20.f, std::min(780.f, savedX));
-        playerPosition.y = std::max(400.f, std::min(580.f, savedY));
-    }
+    m_savedGame = state;
+    m_savedGame.playerPosition.x = std::max(
+        20.f, std::min(static_cast<float>(m_windowWidth) - 20.f, state.playerPosition.x));
+    m_savedGame.playerPosition.y = std::max(
+        20.f, std::min(static_cast<float>(m_windowHeight) - 20.f, state.playerPosition.y));
     return true;
 }
 
-void Game::saveGameState(const std::string& initials, int score, int level, int wave, int lives) const {
-    saveGameState(initials, score, level, wave, lives, sf::Vector2f(400.f, 520.f));
-}
-
-void Game::saveGameState(const std::string& initials, int score, int level, int wave, int lives,
-                         const sf::Vector2f& playerPosition) const {
-    std::ofstream output(kSaveFile.c_str(), std::ios::out | std::ios::trunc);
-    if (!output.is_open()) {
-        return;
-    }
-
-    output << initials << "\n";
-    output << score << "\n";
-    output << level << "\n";
-    output << wave << "\n";
-    output << lives << "\n";
-    output << playerPosition.x << "\n";
-    output << playerPosition.y << "\n";
-}
-
-void Game::clearSavedGame() const {
-    std::remove(kSaveFile.c_str());
-    std::remove(kLegacySaveFile.c_str());
+void Game::clearSavedGame() {
+    SaveGameStore::clear();
+    m_savedGame = SavedGame();
 }

@@ -16,19 +16,6 @@ Bullet::Bullet(const Texture& tex, const Vector2f& pos, const Vector2f& vel, boo
     setVelocity(vel);
 }
 
-Bullet::Bullet(const std::string& assetName, const Vector2f& pos, const Vector2f& vel, bool fromPlayer,
-               const Color& fallbackColor, unsigned int width, unsigned int height)
-    : m_fromPlayer(fromPlayer)
-{
-    setTexture(assetName, fallbackColor, width, height, true);
-    setHitboxLocal(sf::FloatRect(-static_cast<float>(width) * 0.5f,
-                                 -static_cast<float>(height) * 0.5f,
-                                 static_cast<float>(width),
-                                 static_cast<float>(height)));
-    setPosition(pos);
-    setVelocity(vel);
-}
-
 void Bullet::update(float dt) {
     Entity::update(dt);
 

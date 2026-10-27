@@ -1,11 +1,11 @@
 #include "SceneMenu.h"
 #include "../Game.h"
-#include "../AssetManager.h"
+#include "../Managers/AssetManager.h"
 #include "SceneStageIntro.h"
 #include "SceneInitials.h"
 #include "SceneOptions.h"
 #include "../Match.h"
-#include "../AudioManager.h"
+#include "../Managers/AudioManager.h"
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
@@ -17,22 +17,15 @@ namespace {
     const sf::Color kMenuSelected = sf::Color(12, 183, 242);
     const sf::Color kMenuTitle = sf::Color::White;
 
-    bool loadFontFallback(sf::Font& font) {
-        const std::string candidates[] = {
-            "arial.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf",
-            "C:/Windows/Fonts/consola.ttf",
-            "C:/Program Files (x86)/ZinjaI/MinGW32-gcc6/arial.ttf",
-            "C:/Users/Lau/Documents/GitHub/cirujainvaders/arial.ttf"
-        };
+    bool loadProjectFont(sf::Font& font) {
+        return font.loadFromFile("Resources/Tr2n.ttf");
+    }
 
-        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
-            if (font.loadFromFile(candidates[i])) {
-                return true;
-            }
-        }
-        return false;
+    void centerText(sf::Text& text, float x, float y) {
+        const sf::FloatRect bounds = text.getLocalBounds();
+        text.setOrigin(bounds.left + bounds.width * 0.5f,
+                       bounds.top + bounds.height * 0.5f);
+        text.setPosition(x, y);
     }
 }
 
@@ -41,7 +34,7 @@ SceneMenu::SceneMenu()
     AudioManager::instance().playMusic("menu_music.ogg", true);
     (void)AssetManager::instance().getTexture("menu_bg.png", sf::Color(40, 40, 40), 800, 600);
 
-    if (!loadFontFallback(m_font)) {
+    if (!loadProjectFont(m_font)) {
         return;
     }
 
@@ -49,35 +42,63 @@ SceneMenu::SceneMenu()
 
     m_title.setFont(m_font);
     m_title.setCharacterSize(48);
-    m_title.setString("CIRUJAINVADERS");
+    m_title.setString("INSECTRON");
     m_title.setFillColor(kMenuTitle);
-    m_title.setPosition(160.f, 120.f);
 
     m_startText.setFont(m_font);
     m_startText.setCharacterSize(30);
     m_startText.setString("START");
     m_startText.setFillColor(kMenuNormal);
-    m_startText.setPosition(330.f, 240.f);
 
     m_continueText.setFont(m_font);
     m_continueText.setCharacterSize(30);
     m_continueText.setString("CONTINUE");
     m_continueText.setFillColor(kMenuNormal);
-    m_continueText.setPosition(300.f, 300.f);
 
     m_optionsText.setFont(m_font);
     m_optionsText.setCharacterSize(30);
     m_optionsText.setString("OPTIONS");
     m_optionsText.setFillColor(kMenuNormal);
-    m_optionsText.setPosition(300.f, 360.f);
 
     m_exitText.setFont(m_font);
     m_exitText.setCharacterSize(30);
     m_exitText.setString("EXIT");
     m_exitText.setFillColor(kMenuNormal);
-    m_exitText.setPosition(335.f, 420.f);
 
     updateSelectionColors();
+}
+
+void SceneMenu::updateLayout(const sf::Vector2u& windowSize) {
+    if (m_layoutInitialized
+        && windowSize.x == m_layoutWindowSize.x
+        && windowSize.y == m_layoutWindowSize.y
+        && m_continueVisible == m_layoutContinueVisible) {
+        return;
+    }
+
+    m_layoutWindowSize = windowSize;
+    m_layoutContinueVisible = m_continueVisible;
+    m_layoutInitialized = true;
+
+    const float scale = std::max(0.55f, std::min(1.6f,
+        std::min(static_cast<float>(windowSize.x) / 800.f,
+                 static_cast<float>(windowSize.y) / 600.f)));
+    const float centerX = static_cast<float>(windowSize.x) * 0.5f;
+    const float centerY = static_cast<float>(windowSize.y) * 0.5f;
+    const float rowSpacing = 55.f * scale;
+    const float firstRowY = centerY - (m_continueVisible ? 1.5f : 1.f) * rowSpacing;
+
+    m_title.setCharacterSize(static_cast<unsigned int>(48.f * scale));
+    m_startText.setCharacterSize(static_cast<unsigned int>(30.f * scale));
+    m_continueText.setCharacterSize(static_cast<unsigned int>(30.f * scale));
+    m_optionsText.setCharacterSize(static_cast<unsigned int>(30.f * scale));
+    m_exitText.setCharacterSize(static_cast<unsigned int>(30.f * scale));
+
+    centerText(m_title, centerX, centerY - (m_continueVisible ? 165.f : 140.f) * scale);
+    centerText(m_startText, centerX, firstRowY);
+    centerText(m_continueText, centerX, firstRowY + rowSpacing);
+    centerText(m_optionsText, centerX, firstRowY + rowSpacing * (m_continueVisible ? 2.f : 1.f));
+    centerText(m_exitText, centerX, firstRowY + rowSpacing * (m_continueVisible ? 3.f : 2.f));
 }
 
 int SceneMenu::getOptionCount(const Game& game) const {
@@ -97,7 +118,7 @@ void SceneMenu::activateSelection(Game& game) {
                 game.setScene(new SceneInitials());
                 break;
             case 1:
-                game.setScene(new Match(true));
+                game.setScene(new Match(game.getSavedGame()));
                 break;
             case 2:
                 game.setScene(new SceneOptions());
@@ -140,6 +161,7 @@ void SceneMenu::updateSelectionColors() {
 
 void SceneMenu::handleEvent(const sf::Event& event, Game& game) {
     m_continueVisible = game.hasContinueAvailable();
+    updateLayout(game.getWindow().getSize());
 
     if (event.type == sf::Event::KeyPressed) {
         const int optionCount = getOptionCount(game);
@@ -179,7 +201,7 @@ void SceneMenu::handleEvent(const sf::Event& event, Game& game) {
             activateSelection(game);
         } else if (game.hasContinueAvailable() && m_continueText.getGlobalBounds().contains(pos)) {
             m_selectedOption = 1;
-            game.setScene(new Match(true));
+            game.setScene(new Match(game.getSavedGame()));
         } else if (m_optionsText.getGlobalBounds().contains(pos)) {
             m_selectedOption = game.hasContinueAvailable() ? 2 : 1;
             game.setScene(new SceneOptions());
@@ -193,6 +215,7 @@ void SceneMenu::handleEvent(const sf::Event& event, Game& game) {
 void SceneMenu::update(float dt, Game& game) {
     (void)dt;
     m_continueVisible = game.hasContinueAvailable();
+    updateLayout(game.getWindow().getSize());
     if (!m_continueVisible && m_selectedOption > 2) {
         m_selectedOption = 2;
     }
@@ -203,6 +226,7 @@ void SceneMenu::draw(sf::RenderWindow& window) {
     if (!m_fontLoaded) return;
 
     const sf::Vector2u windowSize = window.getSize();
+    updateLayout(windowSize);
     sf::RectangleShape background(sf::Vector2f(static_cast<float>(windowSize.x),
                                                static_cast<float>(windowSize.y)));
     background.setFillColor(sf::Color(5, 12, 22));

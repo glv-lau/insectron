@@ -1,7 +1,7 @@
-master=80
-music=60
-sfx=20
-hud=95
+master=100
+music=100
+sfx=30
+hud=100
 width=1920
 height=1080
 fullscreen=1

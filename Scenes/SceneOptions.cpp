@@ -1,31 +1,26 @@
 #include "SceneOptions.h"
 #include "SceneMenu.h"
 #include "../Game.h"
-#include "../AssetManager.h"
-#include "../AudioManager.h"
+#include "../Managers/AssetManager.h"
+#include "../Managers/AudioManager.h"
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <cstddef>
 #include <sstream>
 
 namespace {
     const int kWidths[] = {800, 1024, 1280, 1366, 1600, 1920};
     const int kHeights[] = {600, 768, 720, 768, 900, 1080};
-    bool loadFontFallback(sf::Font& font) {
-        const std::string candidates[] = {
-            "arial.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf",
-            "C:/Windows/Fonts/consola.ttf",
-            "C:/Program Files (x86)/ZinjaI/MinGW32-gcc6/arial.ttf",
-            "C:/Users/Lau/Documents/GitHub/cirujainvaders/arial.ttf"
-        };
-        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
-            if (font.loadFromFile(candidates[i])) {
-                return true;
-            }
-        }
-        return false;
+    bool loadProjectFont(sf::Font& font) {
+        return font.loadFromFile("Resources/Tr2n.ttf");
+    }
+
+    void centerText(sf::Text& text, float x, float y) {
+        const sf::FloatRect bounds = text.getLocalBounds();
+        text.setOrigin(bounds.left + bounds.width * 0.5f,
+                       bounds.top + bounds.height * 0.5f);
+        text.setPosition(x, y);
     }
 }
 
@@ -37,7 +32,7 @@ SceneOptions::SceneOptions()
 {
     (void)AssetManager::instance().getTexture("hud.png", sf::Color(70, 70, 70), 800, 120);
 
-    if (!loadFontFallback(m_font)) {
+    if (!loadProjectFont(m_font)) {
         return;
     }
 
@@ -46,45 +41,37 @@ SceneOptions::SceneOptions()
     m_title.setCharacterSize(48);
     m_title.setString("OPCIONES");
     m_title.setFillColor(sf::Color::White);
-    m_title.setPosition(220.f, 140.f);
 
     m_masterText.setFont(m_font);
     m_masterText.setCharacterSize(24);
     m_masterText.setFillColor(sf::Color::White);
-    m_masterText.setPosition(200.f, 250.f);
 
     m_musicText.setFont(m_font);
     m_musicText.setCharacterSize(24);
     m_musicText.setFillColor(sf::Color::White);
-    m_musicText.setPosition(200.f, 310.f);
 
     m_sfxText.setFont(m_font);
     m_sfxText.setCharacterSize(24);
     m_sfxText.setFillColor(sf::Color::White);
-    m_sfxText.setPosition(200.f, 370.f);
 
     m_hudSizeText.setFont(m_font);
     m_hudSizeText.setCharacterSize(24);
     m_hudSizeText.setFillColor(sf::Color::White);
     m_resolutionText.setFillColor(sf::Color::White);
     m_fullscreenText.setFillColor(sf::Color::White);
-    m_hudSizeText.setPosition(200.f, 430.f);
 
     m_resolutionText.setFont(m_font);
     m_resolutionText.setCharacterSize(24);
     m_resolutionText.setFillColor(sf::Color::White);
-    m_resolutionText.setPosition(200.f, 480.f);
 
     m_fullscreenText.setFont(m_font);
     m_fullscreenText.setCharacterSize(24);
     m_fullscreenText.setFillColor(sf::Color::White);
-    m_fullscreenText.setPosition(200.f, 530.f);
 
     m_exitText.setFont(m_font);
     m_exitText.setCharacterSize(24);
     m_exitText.setString("VOLVER");
     m_exitText.setFillColor(sf::Color::White);
-    m_exitText.setPosition(300.f, 570.f);
 
     m_masterVolume = 100;
     m_musicVolume = 100;
@@ -93,6 +80,44 @@ SceneOptions::SceneOptions()
     m_resolutionIndex = 0;
     m_fullscreen = false;
     refreshLabels();
+}
+
+void SceneOptions::updateLayout(const sf::Vector2u& windowSize) {
+    if (m_layoutInitialized
+        && windowSize.x == m_layoutWindowSize.x
+        && windowSize.y == m_layoutWindowSize.y) {
+        return;
+    }
+
+    m_layoutWindowSize = windowSize;
+    m_layoutInitialized = true;
+
+    const float scale = std::max(0.55f, std::min(1.6f,
+        std::min(static_cast<float>(windowSize.x) / 800.f,
+                 static_cast<float>(windowSize.y) / 600.f)));
+    const float centerX = static_cast<float>(windowSize.x) * 0.5f;
+    const float centerY = static_cast<float>(windowSize.y) * 0.5f;
+    const unsigned int bodySize = std::max(12u, static_cast<unsigned int>(24.f * scale));
+
+    m_title.setCharacterSize(static_cast<unsigned int>(42.f * scale));
+    m_masterText.setCharacterSize(bodySize);
+    m_musicText.setCharacterSize(bodySize);
+    m_sfxText.setCharacterSize(bodySize);
+    m_hudSizeText.setCharacterSize(bodySize);
+    m_resolutionText.setCharacterSize(bodySize);
+    m_fullscreenText.setCharacterSize(bodySize);
+    m_exitText.setCharacterSize(bodySize);
+
+    centerText(m_title, centerX, centerY - 190.f * scale);
+    const float firstOptionY = centerY - 105.f * scale;
+    const float optionSpacing = 47.f * scale;
+    centerText(m_masterText, centerX, firstOptionY);
+    centerText(m_musicText, centerX, firstOptionY + optionSpacing);
+    centerText(m_sfxText, centerX, firstOptionY + optionSpacing * 2.f);
+    centerText(m_hudSizeText, centerX, firstOptionY + optionSpacing * 3.f);
+    centerText(m_resolutionText, centerX, firstOptionY + optionSpacing * 4.f);
+    centerText(m_fullscreenText, centerX, firstOptionY + optionSpacing * 5.f);
+    centerText(m_exitText, centerX, firstOptionY + optionSpacing * 6.f);
 }
 
 void SceneOptions::refreshLabels() {
@@ -119,6 +144,17 @@ void SceneOptions::refreshLabels() {
     ss.str("");
     ss << "PANTALLA COMPLETA: " << (m_fullscreen ? "SI" : "NO");
     m_fullscreenText.setString(ss.str());
+
+    if (m_layoutInitialized) {
+        const float centerX = static_cast<float>(m_layoutWindowSize.x) * 0.5f;
+        sf::Text* labels[] = {
+            &m_masterText, &m_musicText, &m_sfxText, &m_hudSizeText,
+            &m_resolutionText, &m_fullscreenText
+        };
+        for (std::size_t i = 0; i < sizeof(labels) / sizeof(labels[0]); ++i) {
+            centerText(*labels[i], centerX, labels[i]->getPosition().y);
+        }
+    }
 }
 
 void SceneOptions::handleEvent(const sf::Event& event, Game& game) {
@@ -250,13 +286,15 @@ void SceneOptions::draw(sf::RenderWindow& window) {
     }
 
     const sf::Vector2u windowSize = window.getSize();
-    sf::RectangleShape panel(sf::Vector2f(
-        std::max(760.f, static_cast<float>(windowSize.x) - 40.f),
-        std::max(500.f, static_cast<float>(windowSize.y) - 140.f)));
+    const float panelWidth = std::max(0.f, static_cast<float>(windowSize.x) - 40.f);
+    const float panelHeight = std::max(0.f, static_cast<float>(windowSize.y) - 40.f);
+    sf::RectangleShape panel(sf::Vector2f(panelWidth, panelHeight));
     panel.setFillColor(sf::Color(45, 45, 55));
-    panel.setPosition(20.f, 100.f);
+    panel.setPosition((static_cast<float>(windowSize.x) - panelWidth) * 0.5f,
+                      (static_cast<float>(windowSize.y) - panelHeight) * 0.5f);
     window.draw(panel);
 
+    updateLayout(windowSize);
     window.draw(m_title);
     window.draw(m_masterText);
     window.draw(m_musicText);

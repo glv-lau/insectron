@@ -1,9 +1,9 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "SaveGame.h"
 #include "Scenes/Scene.h"
 #include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <string>
 
 class Game {
@@ -31,13 +31,8 @@ public:
 
     void loadConfigFromFile();
     void saveConfigToFile() const;
-    bool loadSaveGameFromFile(std::string& initials, int& score, int& level, int& wave, int& lives) const;
-    bool loadSaveGameFromFile(std::string& initials, int& score, int& level, int& wave,
-                              int& lives, sf::Vector2f& playerPosition) const;
-    void saveGameState(const std::string& initials, int score, int level, int wave, int lives) const;
-    void saveGameState(const std::string& initials, int score, int level, int wave, int lives,
-                       const sf::Vector2f& playerPosition) const;
-    void clearSavedGame() const;
+    bool saveGameState(const SavedGame& state);
+    void clearSavedGame();
     void applyVolumeToAudio() const;
 
     sf::RenderWindow& getWindow() { return m_win; }
@@ -45,11 +40,13 @@ public:
     void addScore(int points) { m_score += points; }
     void setPlayerInitials(const std::string& initials) { m_playerInitials = initials; }
     const std::string& getPlayerInitials() const { return m_playerInitials; }
+    const SavedGame& getSavedGame() const { return m_savedGame; }
 
 private:
     int m_score;
     bool m_continueAvailable;
     std::string m_playerInitials;
+    SavedGame m_savedGame;
     int m_masterVolume;
     int m_musicVolume;
     int m_sfxVolume;

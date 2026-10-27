@@ -1,5 +1,4 @@
 #include "Enemy.h"
-#include "Bullet.h"
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
 
@@ -12,15 +11,6 @@ Enemy::Enemy(const Texture& tex, const Texture& bulletTex, const Vector2f& pos)
     , m_bossRng(std::random_device{}())
 {
     setTextureToSize(tex, 64.f, 64.f, true);
-    setHitboxLocal(FloatRect(-28.f, -28.f, 56.f, 56.f));
-    setPosition(pos);
-}
-
-Enemy::Enemy(const std::string& assetName, const Texture& bulletTex, const Vector2f& pos, const Color& fallbackColor, unsigned int width, unsigned int height)
-    : m_bulletTexture(&bulletTex)
-    , m_bossRng(std::random_device{}())
-{
-    setTexture(assetName, fallbackColor, width, height, true);
     setHitboxLocal(FloatRect(-28.f, -28.f, 56.f, 56.f));
     setPosition(pos);
 }
@@ -50,8 +40,8 @@ void Enemy::update(float dt) {
                              std::max(75.f, std::min(world.y * 0.48f, y))));
     }
 
-    if (!m_isBoss && ((m_velocity.x != 0.f) || (m_velocity.y != 0.f))) {
-        m_sprite.move(m_velocity * dt);
+    if (!m_isBoss) {
+        Entity::update(dt);
     }
 
     Vector2f p = getPosition();
@@ -196,8 +186,6 @@ void Enemy::configureAsBoss(int level) {
     setBulletSpeed(200.f + level * 25.f);
     setSpiralSpeed(190.f);
     setVelocity(Vector2f(80.f, 20.f));
-    setAmplitude(80.f);
-    m_bossPhase = 0.f;
     m_bossRetuneTimer = 0.f;
     retuneBossTrajectory();
 }

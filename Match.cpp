@@ -1,67 +1,34 @@
 #include "Match.h"
 #include "Game.h"
-#include "AssetManager.h"
-#include "AudioManager.h"
+#include "Managers/AssetManager.h"
+#include "Managers/AudioManager.h"
+#include "SaveGame.h"
 #include "Scenes/SceneMenu.h"
 #include "Scenes/SceneHighScores.h"
 #include <SFML/Graphics/Image.hpp>
-#include <fstream>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 namespace {
-    bool loadFontFallback(sf::Font& font) {
-        const std::string candidates[] = {
-            "arial.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf",
-            "C:/Windows/Fonts/consola.ttf",
-            "C:/Program Files (x86)/ZinjaI/MinGW32-gcc6/arial.ttf",
-            "C:/Users/Lau/Documents/GitHub/cirujainvaders/arial.ttf"
-        };
-
-        for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
-            if (font.loadFromFile(candidates[i])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool readSavedStateFromDisk(int& score, int& level, int& wave, int& lives,
-                                std::string& initials, sf::Vector2f& playerPosition) {
-        std::ifstream input("partida_guardada.txt");
-        if (!input.is_open()) {
-            input.open("savegame.txt");
-        }
-        if (!input.is_open()) {
-            return false;
-        }
-
-        initials.clear();
-        score = 0;
-        level = 1;
-        wave = 0;
-        lives = 3;
-        if (!(input >> initials >> score >> level >> wave >> lives)) {
-            return false;
-        }
-        playerPosition = sf::Vector2f(400.f, 520.f);
-        input >> playerPosition.x >> playerPosition.y;
-        return initials.size() == 3 && score >= 0 && level >= 1 && wave >= 0 && lives >= 1 && lives <= 5;
+    bool loadProjectFont(sf::Font& font) {
+        return font.loadFromFile("Resources/Tr2n.ttf");
     }
 }
 
 Match::Match()
-    : Match(false)
+    : Match(false, nullptr)
 {
 }
 
-Match::Match(bool resumeFromSaveFile)
+Match::Match(const SavedGame& savedGame)
+    : Match(true, &savedGame)
+{
+}
+
+Match::Match(bool resumeFromSaveFile, const SavedGame* savedGame)
     : m_rng(std::random_device{}())
 {
     m_playerTex = AssetManager::instance().getTexture("player.png", sf::Color(12, 183, 242), 88, 88);
@@ -72,7 +39,7 @@ Match::Match(bool resumeFromSaveFile)
     m_bulletTex = AssetManager::instance().getTexture("bullet_player.png", sf::Color(124, 218, 249), 10, 10);
     m_powerUpTex = AssetManager::instance().getTexture("powerup.png", sf::Color(182, 255, 255), 32, 32);
 
-    if (loadFontFallback(m_font)) {
+    if (loadProjectFont(m_font)) {
         m_fontLoaded = true;
         m_hudText.setFont(m_font);
         m_hudText.setCharacterSize(18);
@@ -91,23 +58,19 @@ Match::Match(bool resumeFromSaveFile)
     }
 
     const sf::Vector2f worldBounds = Entity::getWorldBounds();
-    m_player.reset(new Player(m_playerTex,
-                              sf::Vector2f(worldBounds.x * 0.5f, worldBounds.y * 0.86f)));
+    m_player = std::make_unique<Player>(
+        m_playerTex, sf::Vector2f(worldBounds.x * 0.5f, worldBounds.y * 0.86f));
 
     if (resumeFromSaveFile) {
-        std::string initials;
-        int savedScore = 0;
-        int savedLevel = 1;
-        int savedWave = 0;
-        int savedLives = 3;
-        sf::Vector2f savedPosition(400.f, 520.f);
-        if (readSavedStateFromDisk(savedScore, savedLevel, savedWave, savedLives,
-                                   initials, savedPosition)) {
-                m_score = savedScore;
-                m_level = savedLevel;
-                m_waveInLevel = std::max(0, std::min(WAVES_PER_LEVEL - 1, savedWave));
-                m_player->setLives(savedLives);
-                m_player->setPosition(savedPosition);
+        if (savedGame != nullptr) {
+            m_score = savedGame->score;
+            m_level = savedGame->level;
+            m_waveInLevel = std::max(0, std::min(WAVES_PER_LEVEL - 1, savedGame->wave));
+            m_player->setLives(savedGame->lives);
+            const sf::Vector2f savedPosition(
+                std::max(20.f, std::min(worldBounds.x - 20.f, savedGame->playerPosition.x)),
+                std::max(20.f, std::min(worldBounds.y - 20.f, savedGame->playerPosition.y)));
+            m_player->setPosition(savedPosition);
         }
     }
 
@@ -159,7 +122,6 @@ void Match::spawnNormalWave(int waveIndex) {
         e.setBulletSpeed(bulletSpeed);
         e.setHP(hp);
         e.setScoreValue(scoreValue);
-        e.setAmplitude(24.f + waveIndex * 8.f);
         e.setFanCount(fanCount);
         e.setCircularCount(circularCount);
     };
@@ -326,8 +288,8 @@ void Match::resetMatch() {
     m_enemies.clear();
     m_powerUps.clear();
     const sf::Vector2f worldBounds = Entity::getWorldBounds();
-    m_player.reset(new Player(m_playerTex,
-                              sf::Vector2f(worldBounds.x * 0.5f, worldBounds.y * 0.86f)));
+    m_player = std::make_unique<Player>(
+        m_playerTex, sf::Vector2f(worldBounds.x * 0.5f, worldBounds.y * 0.86f));
     spawnWave();
 }
 
@@ -350,8 +312,17 @@ void Match::handleEvent(const sf::Event& event, Game& game) {
 
         if (m_paused && event.key.code == sf::Keyboard::Escape) {
             AudioManager::instance().playSfx("selecting.wav");
-            game.saveGameState(game.getPlayerInitials(), m_score, m_level, m_waveInLevel,
-                               m_player->getLives(), m_player->getPosition());
+            SavedGame savedGame;
+            savedGame.initials = game.getPlayerInitials();
+            savedGame.score = m_score;
+            savedGame.level = m_level;
+            savedGame.wave = m_waveInLevel;
+            savedGame.lives = m_player->getLives();
+            savedGame.playerPosition = m_player->getPosition();
+            const sf::Vector2f bounds = Entity::getWorldBounds();
+            if (!game.saveGameState(savedGame)) {
+                return;
+            }
             game.setContinueAvailable(true);
             game.setScene(new SceneMenu());
         }
@@ -434,7 +405,6 @@ void Match::update(float dt, Game& game) {
             e.setBulletSpeed(180.f);
             e.setHP(1);
             e.setScoreValue(80);
-            e.setAmplitude(10.f);
         }
     }
 

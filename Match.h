@@ -6,8 +6,9 @@
 #include "Entities/Enemy.h"
 #include "Entities/Bullet.h"
 #include "Entities/PowerUp.h"
-#include "ScoreManager.h"
+#include "Managers/ScoreManager.h"
 #include "FormationManager.h"
+#include "SaveGame.h"
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include <memory>
@@ -18,7 +19,7 @@
 class Match : public Scene {
 public:
     Match();
-    explicit Match(bool resumeFromSaveFile);
+    explicit Match(const SavedGame& savedGame);
     ~Match() override = default;
 
     void update(float dt, Game& game) override;
@@ -26,6 +27,8 @@ public:
     void handleEvent(const sf::Event& event, Game& game) override;
 
 private:
+    Match(bool resumeFromSaveFile, const SavedGame* savedGame);
+
     static constexpr int WAVES_PER_LEVEL = 3;
     static constexpr float WAVE_DELAY = 2.5f;
 

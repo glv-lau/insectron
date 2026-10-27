@@ -8,10 +8,9 @@ class Bullet;
 class Player : public Entity {
 public:
     Player(const sf::Texture& tex, const sf::Vector2f& pos);
-    explicit Player(const sf::Vector2f& pos);
 
     void update(float dt) override;
-    void draw(sf::RenderWindow& win) const;
+    void draw(sf::RenderWindow& win) const override;
     std::vector<std::unique_ptr<Bullet>> shoot(const sf::Texture& bulletTexture);
 
     bool canShoot() const { return m_shootTimer <= 0.f; }

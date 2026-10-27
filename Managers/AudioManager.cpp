@@ -28,6 +28,16 @@ namespace {
         }
         return false;
     }
+
+    float sfxMultiplier(const std::string& fileName) {
+        if (fileName == "shoot.wav") {
+            return 0.06f;
+        }
+        if (fileName == "collision.wav" || fileName == "collision_en.wav") {
+            return 0.06f;
+        }
+        return 1.f;
+    }
 }
 
 AudioManager::AudioManager()
@@ -140,9 +150,7 @@ void AudioManager::playSfx(const std::string& fileName) {
     m_sfxChannelFiles[channelIndex] = fileName;
     const float masterSfx = (static_cast<float>(m_sfxVolume) / 100.f)
         * static_cast<float>(m_masterVolume);
-    const float multiplier = (fileName == "collision.wav"
-        || fileName == "collision_en.wav") ? 0.5f : 1.f;
-    channel.setVolume(masterSfx * multiplier);
+    channel.setVolume(masterSfx * sfxMultiplier(fileName));
     channel.play();
 }
 
@@ -175,8 +183,6 @@ void AudioManager::updateVolumes() {
     m_music.setVolume((static_cast<float>(m_musicVolume) / 100.f) * master);
     const float sfx = (static_cast<float>(m_sfxVolume) / 100.f) * master;
     for (size_t i = 0; i < m_sfxPool.size(); ++i) {
-        const float multiplier = (m_sfxChannelFiles[i] == "collision.wav"
-            || m_sfxChannelFiles[i] == "collision_en.wav") ? 0.5f : 1.f;
-        m_sfxPool[i]->setVolume(sfx * multiplier);
+        m_sfxPool[i]->setVolume(sfx * sfxMultiplier(m_sfxChannelFiles[i]));
     }
 }

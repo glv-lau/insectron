@@ -10,3 +10,7 @@ Release/
 # Ignorar archivos de configuración del IDE Zinjai
 *.zpr
 *.zpr.bak
+!Insectron.zpr
+!Debug_Win32/
+Debug_Win32/*
+!Debug_Win32/Insectron.exe

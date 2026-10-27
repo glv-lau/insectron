@@ -18,18 +18,6 @@ Player::Player(const Texture& tex, const Vector2f& pos) {
     setRotation(0.f);
 }
 
-Player::Player(const Vector2f& pos) {
-    setTexture("player.png", sf::Color(12, 183, 242), 88, 88);
-    const FloatRect spriteBounds = m_sprite.getLocalBounds();
-    setHitboxLocal(FloatRect(
-        spriteBounds.left + spriteBounds.width * 0.40f,
-        spriteBounds.top + spriteBounds.height * 0.64f,
-        spriteBounds.width * 0.20f,
-        spriteBounds.height * 0.18f));
-    setPosition(pos);
-    setRotation(0.f);
-}
-
 void Player::setLives(int lives) {
     m_lives = std::max(0, std::min(5, lives));
     if (m_lives > 0) {
