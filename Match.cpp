@@ -286,7 +286,7 @@ void Match::checkCollisions() {
                 }
             }
         } else if (m_player->isAlive() && !m_player->isInvulnerable()
-                   && bullet->getBounds().intersects(m_player->getBounds())) {
+                   && bullet->getBounds().intersects(m_player->getHitboxGlobal())) {
             AudioManager::instance().playSfx("collision.wav");
             m_player->loseLife();
             bullet->destroy();
@@ -304,7 +304,7 @@ void Match::checkCollisions() {
             pickupBounds.top -= 8.f;
             pickupBounds.width += 16.f;
             pickupBounds.height += 16.f;
-            if (pickupBounds.intersects(m_player->getBounds())) {
+            if (pickupBounds.intersects(m_player->getHitboxGlobal())) {
                 powerUp.apply(*m_player);
             }
         }

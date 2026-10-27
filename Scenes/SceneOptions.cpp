@@ -140,10 +140,10 @@ void SceneOptions::handleEvent(const sf::Event& event, Game& game) {
     m_fullscreen = game.isFullscreen();
 
     if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W) {
-        m_selectedOption = (m_selectedOption + 7) % 7;
+        m_selectedOption = std::max(0, m_selectedOption - 1);
         AudioManager::instance().playSfx("selecting.wav");
     } else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S) {
-        m_selectedOption = (m_selectedOption + 1) % 7;
+        m_selectedOption = std::min(6, m_selectedOption + 1);
         AudioManager::instance().playSfx("selecting.wav");
     } else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A) {
         switch (m_selectedOption) {

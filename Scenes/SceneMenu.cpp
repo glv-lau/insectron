@@ -9,6 +9,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <algorithm>
 #include <string>
 
 namespace {
@@ -142,11 +143,12 @@ void SceneMenu::handleEvent(const sf::Event& event, Game& game) {
 
     if (event.type == sf::Event::KeyPressed) {
         const int optionCount = getOptionCount(game);
+        m_selectedOption = std::max(0, std::min(optionCount - 1, m_selectedOption));
         if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W) {
-            m_selectedOption = (m_selectedOption + optionCount - 1) % optionCount;
+            m_selectedOption = std::max(0, m_selectedOption - 1);
             AudioManager::instance().playSfx("selecting.wav");
         } else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S) {
-            m_selectedOption = (m_selectedOption + 1) % optionCount;
+            m_selectedOption = std::min(optionCount - 1, m_selectedOption + 1);
             AudioManager::instance().playSfx("selecting.wav");
         } else if (event.key.code == sf::Keyboard::Return || event.key.code == sf::Keyboard::Space) {
             activateSelection(game);

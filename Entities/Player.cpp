@@ -10,10 +10,10 @@ Player::Player(const Texture& tex, const Vector2f& pos) {
     setTextureToSize(tex, 88.f, 88.f);
     const FloatRect spriteBounds = m_sprite.getLocalBounds();
     setHitboxLocal(FloatRect(
-        spriteBounds.left + spriteBounds.width * 0.36f,
-        spriteBounds.top + spriteBounds.height * 0.60f,
-        spriteBounds.width * 0.28f,
-        spriteBounds.height * 0.26f));
+        spriteBounds.left + spriteBounds.width * 0.40f,
+        spriteBounds.top + spriteBounds.height * 0.64f,
+        spriteBounds.width * 0.20f,
+        spriteBounds.height * 0.18f));
     setPosition(pos);
     setRotation(0.f);
 }
@@ -22,10 +22,10 @@ Player::Player(const Vector2f& pos) {
     setTexture("player.png", sf::Color(12, 183, 242), 88, 88);
     const FloatRect spriteBounds = m_sprite.getLocalBounds();
     setHitboxLocal(FloatRect(
-        spriteBounds.left + spriteBounds.width * 0.36f,
-        spriteBounds.top + spriteBounds.height * 0.60f,
-        spriteBounds.width * 0.28f,
-        spriteBounds.height * 0.26f));
+        spriteBounds.left + spriteBounds.width * 0.40f,
+        spriteBounds.top + spriteBounds.height * 0.64f,
+        spriteBounds.width * 0.20f,
+        spriteBounds.height * 0.18f));
     setPosition(pos);
     setRotation(0.f);
 }
