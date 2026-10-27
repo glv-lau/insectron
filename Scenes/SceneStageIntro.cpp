@@ -22,9 +22,6 @@ SceneStageIntro::SceneStageIntro(int stage, float duration)
     m_text.setCharacterSize(48);
     m_text.setString("STAGE " + std::to_string(m_stage) + ", GO!!");
     m_text.setFillColor(sf::Color::White);
-    const sf::FloatRect bounds = m_text.getLocalBounds();
-    m_text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
-    m_text.setPosition(400.f, 300.f);
 }
 
 void SceneStageIntro::handleEvent(const sf::Event& event, Game& game) {
@@ -50,6 +47,15 @@ void SceneStageIntro::draw(sf::RenderWindow& window) {
     window.draw(background);
 
     if (m_fontLoaded) {
+        const float scale = std::max(0.55f, std::min(1.6f,
+            std::min(static_cast<float>(windowSize.x) / 800.f,
+                     static_cast<float>(windowSize.y) / 600.f)));
+        m_text.setCharacterSize(static_cast<unsigned int>(48.f * scale));
+        const sf::FloatRect bounds = m_text.getLocalBounds();
+        m_text.setOrigin(bounds.left + bounds.width * 0.5f,
+                         bounds.top + bounds.height * 0.5f);
+        m_text.setPosition(static_cast<float>(windowSize.x) * 0.5f,
+                           static_cast<float>(windowSize.y) * 0.5f);
         window.draw(m_text);
     }
 }

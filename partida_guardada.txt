@@ -1,0 +1,7 @@
+initials=SDA
+score=0
+level=1
+wave=0
+lives=3
+x=960
+y=928.799988
