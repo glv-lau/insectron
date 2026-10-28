@@ -33,6 +33,7 @@ private:
     bool m_layoutInitialized = false;
     bool m_layoutContinueVisible = false;
     int m_selectedOption = 0;
+    int m_lastHoveredOption = -1;
 };
 
 #endif

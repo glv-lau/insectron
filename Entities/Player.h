@@ -32,7 +32,7 @@ private:
     float getEffectiveCooldown() const;
 
     int m_lives = 3;
-    float m_speed = 300.f;
+    float m_speed = 345.f;
     float m_shootCooldown = 0.18f;
     float m_shootTimer = 0.f;
 

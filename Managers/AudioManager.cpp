@@ -1,6 +1,7 @@
 #include "AudioManager.h"
 
 #include <SFML/Audio.hpp>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -47,6 +48,7 @@ AudioManager::AudioManager()
     , m_musicEnabled(true)
     , m_sfxEnabled(true)
     , m_lastTrack("")
+    , m_musicUnderwater(false)
     , m_nextChannel(0)
 {
     for (int i = 0; i < 16; ++i) {
@@ -118,6 +120,11 @@ void AudioManager::playMusic(const std::string& fileName, bool loop) {
         return;
     }
 
+    if (m_lastTrack == fileName && m_music.getStatus() == sf::Sound::Playing) {
+        m_music.setLoop(loop);
+        return;
+    }
+
     const std::map<std::string, std::shared_ptr<sf::SoundBuffer> >::const_iterator it =
         m_buffers.find(fileName);
     if (it == m_buffers.end()) {
@@ -127,9 +134,68 @@ void AudioManager::playMusic(const std::string& fileName, bool loop) {
     }
 
     m_music.setBuffer(*it->second);
+    m_musicUnderwater = false;
+    m_underwaterMusicBuffer.reset();
+    if (!createUnderwaterBuffer(*it->second, m_underwaterMusicBuffer)) {
+        std::cerr << "No se pudo preparar el filtro de bajos para: "
+                  << fileName << ".\n";
+    }
+
     m_music.setLoop(loop);
     m_music.play();
     m_lastTrack = fileName;
+}
+
+void AudioManager::setMusicUnderwater(bool underwater) {
+    const sf::Sound::Status status = m_music.getStatus();
+    if (m_musicUnderwater == underwater || m_lastTrack.empty()
+        || (status != sf::Sound::Playing && status != sf::Sound::Paused)) {
+        return;
+    }
+
+    const std::map<std::string, std::shared_ptr<sf::SoundBuffer> >::const_iterator it =
+        m_buffers.find(m_lastTrack);
+    if (it == m_buffers.end()) {
+        std::cerr << "No se encontró el búfer de música activo: "
+                  << m_lastTrack << ".\n";
+        return;
+    }
+
+    const sf::Time offset = m_music.getPlayingOffset();
+    const bool loop = m_music.getLoop();
+    const sf::SoundBuffer* buffer = it->second.get();
+    if (underwater) {
+        if (!m_underwaterMusicBuffer) {
+            std::cerr << "El filtro de bajos no está disponible para: "
+                      << m_lastTrack << ".\n";
+            return;
+        }
+        buffer = m_underwaterMusicBuffer.get();
+    }
+
+    m_music.stop();
+    m_music.setBuffer(*buffer);
+    m_music.setLoop(loop);
+    m_music.setPlayingOffset(offset);
+    m_music.play();
+    if (status == sf::Sound::Paused) {
+        m_music.pause();
+    }
+    m_musicUnderwater = underwater;
+}
+
+void AudioManager::stopMusic() {
+    m_music.stop();
+    if (m_musicUnderwater) {
+        const std::map<std::string, std::shared_ptr<sf::SoundBuffer> >::const_iterator it =
+            m_buffers.find(m_lastTrack);
+        if (it != m_buffers.end()) {
+            m_music.setBuffer(*it->second);
+        }
+    }
+    m_lastTrack.clear();
+    m_musicUnderwater = false;
+    m_underwaterMusicBuffer.reset();
 }
 
 void AudioManager::playSfx(const std::string& fileName) {
@@ -166,10 +232,45 @@ bool AudioManager::loadBuffer(const std::string& fileName,
     return true;
 }
 
+bool AudioManager::createUnderwaterBuffer(
+    const sf::SoundBuffer& source,
+    std::shared_ptr<sf::SoundBuffer>& filtered) const {
+    const sf::Uint64 sampleCount = source.getSampleCount();
+    const unsigned int channelCount = source.getChannelCount();
+    const unsigned int sampleRate = source.getSampleRate();
+    const sf::Int16* sourceSamples = source.getSamples();
+    if (sampleCount == 0 || channelCount == 0 || sampleRate == 0
+        || sourceSamples == nullptr) {
+        return false;
+    }
+
+    std::vector<sf::Int16> filteredSamples(static_cast<std::size_t>(sampleCount));
+    std::vector<float> previousSamples(channelCount, 0.f);
+    const float cutoffHz = 500.f;
+    const float alpha = 1.f - std::exp(
+        -2.f * 3.14159265358979323846f * cutoffHz / static_cast<float>(sampleRate));
+
+    for (sf::Uint64 i = 0; i < sampleCount; ++i) {
+        const unsigned int channel = static_cast<unsigned int>(i % channelCount);
+        const float input = static_cast<float>(sourceSamples[i]);
+        previousSamples[channel] += alpha * (input - previousSamples[channel]);
+        filteredSamples[static_cast<std::size_t>(i)] =
+            static_cast<sf::Int16>(previousSamples[channel]);
+    }
+
+    filtered.reset(new sf::SoundBuffer());
+    if (!filtered->loadFromSamples(filteredSamples.data(), sampleCount,
+                                   channelCount, sampleRate)) {
+        filtered.reset();
+        return false;
+    }
+    return true;
+}
+
 void AudioManager::preloadAssets() {
     const char* files[] = {
         "shoot.wav", "collision.wav", "collision_en.wav", "selecting.wav",
-        "menu_music.ogg", "wave_music.ogg", "boss_music.ogg", "pause_music.ogg"
+        "menu_music.ogg", "wave_music.ogg"
     };
     const size_t count = sizeof(files) / sizeof(files[0]);
     for (size_t i = 0; i < count; ++i) {

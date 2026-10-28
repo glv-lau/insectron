@@ -1,6 +1,6 @@
 master=100
-music=100
-sfx=30
+music=90
+sfx=100
 hud=100
 width=1920
 height=1080

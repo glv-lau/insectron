@@ -23,6 +23,7 @@ private:
     sf::Text m_titleText;
     sf::Text m_inputText;
     sf::Text m_promptText;
+    sf::Text m_continueText;
     bool m_fontLoaded;
 };
 

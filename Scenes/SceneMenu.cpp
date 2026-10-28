@@ -182,14 +182,25 @@ void SceneMenu::handleEvent(const sf::Event& event, Game& game) {
 
     if (event.type == sf::Event::MouseMoved) {
         const sf::Vector2f pos(static_cast<float>(event.mouseMove.x), static_cast<float>(event.mouseMove.y));
+        int hoveredOption = -1;
         if (m_startText.getGlobalBounds().contains(pos)) {
-            m_selectedOption = 0;
+            hoveredOption = 0;
         } else if (game.hasContinueAvailable() && m_continueText.getGlobalBounds().contains(pos)) {
-            m_selectedOption = 1;
+            hoveredOption = 1;
         } else if (m_optionsText.getGlobalBounds().contains(pos)) {
-            m_selectedOption = game.hasContinueAvailable() ? 2 : 1;
+            hoveredOption = game.hasContinueAvailable() ? 2 : 1;
         } else if (m_exitText.getGlobalBounds().contains(pos)) {
-            m_selectedOption = game.hasContinueAvailable() ? 3 : 2;
+            hoveredOption = game.hasContinueAvailable() ? 3 : 2;
+        }
+
+        if (hoveredOption != m_lastHoveredOption) {
+            if (hoveredOption >= 0) {
+                AudioManager::instance().playSfx("selecting.wav");
+            }
+            m_lastHoveredOption = hoveredOption;
+        }
+        if (hoveredOption >= 0) {
+            m_selectedOption = hoveredOption;
         }
         updateSelectionColors();
     }

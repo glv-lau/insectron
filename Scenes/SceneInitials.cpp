@@ -3,10 +3,18 @@
 #include "SceneStageIntro.h"
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <cctype>
 #include <string>
 
 namespace {
+    void centerText(sf::Text& text, float x, float y) {
+        const sf::FloatRect bounds = text.getLocalBounds();
+        text.setOrigin(bounds.left + bounds.width * 0.5f,
+                       bounds.top + bounds.height * 0.5f);
+        text.setPosition(x, y);
+    }
+
     bool loadProjectFont(sf::Font& font) {
         return font.loadFromFile("Resources/Tr2n.ttf");
     }
@@ -25,20 +33,22 @@ SceneInitials::SceneInitials()
     m_titleText.setFont(m_font);
     m_titleText.setCharacterSize(36);
     m_titleText.setString("INGRESE SUS INICIALES");
-    m_titleText.setPosition(120.f, 140.f);
     m_titleText.setFillColor(sf::Color::White);
 
     m_promptText.setFont(m_font);
     m_promptText.setCharacterSize(22);
     m_promptText.setString("3 letras");
-    m_promptText.setPosition(300.f, 220.f);
     m_promptText.setFillColor(sf::Color(182, 255, 255));
 
     m_inputText.setFont(m_font);
     m_inputText.setCharacterSize(42);
     m_inputText.setString("___");
-    m_inputText.setPosition(300.f, 280.f);
     m_inputText.setFillColor(sf::Color(12, 183, 242));
+
+    m_continueText.setFont(m_font);
+    m_continueText.setCharacterSize(18);
+    m_continueText.setString("ENTER PARA CONTINUAR");
+    m_continueText.setFillColor(sf::Color(12, 183, 242));
     updateInputText();
 }
 
@@ -48,9 +58,6 @@ void SceneInitials::updateInputText() {
         display += "_";
     }
     m_inputText.setString(display);
-    const sf::FloatRect bounds = m_inputText.getLocalBounds();
-    m_inputText.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
-    m_inputText.setPosition(400.f, 310.f);
 }
 
 void SceneInitials::handleEvent(const sf::Event& event, Game& game) {
@@ -111,7 +118,33 @@ void SceneInitials::draw(sf::RenderWindow& window) {
     background.setFillColor(sf::Color(5, 12, 22));
     background.setPosition(0.f, 0.f);
     window.draw(background);
+
+    const float scale = std::max(0.55f, std::min(1.6f,
+        std::min(static_cast<float>(windowSize.x) / 800.f,
+                 static_cast<float>(windowSize.y) / 600.f)));
+    const float centerX = static_cast<float>(windowSize.x) * 0.5f;
+    const float centerY = static_cast<float>(windowSize.y) * 0.5f;
+    m_titleText.setCharacterSize(static_cast<unsigned int>(36.f * scale));
+    m_promptText.setCharacterSize(static_cast<unsigned int>(22.f * scale));
+    m_inputText.setCharacterSize(static_cast<unsigned int>(42.f * scale));
+    m_continueText.setCharacterSize(static_cast<unsigned int>(18.f * scale));
+    m_continueText.setFillColor(m_initials.size() == 3
+        ? sf::Color(12, 183, 242)
+        : sf::Color(90, 110, 125));
+    centerText(m_titleText, centerX, centerY - 112.f * scale);
+    centerText(m_promptText, centerX, centerY - 35.f * scale);
+    centerText(m_inputText, centerX, centerY + 45.f * scale);
+    centerText(m_continueText, centerX, centerY + 135.f * scale);
+
+    sf::RectangleShape inputBox(sf::Vector2f(190.f * scale, 72.f * scale));
+    inputBox.setOrigin(inputBox.getSize() * 0.5f);
+    inputBox.setPosition(centerX, centerY + 45.f * scale);
+    inputBox.setFillColor(sf::Color(5, 12, 22));
+    inputBox.setOutlineColor(sf::Color(12, 183, 242));
+    inputBox.setOutlineThickness(2.f * scale);
+    window.draw(inputBox);
     window.draw(m_titleText);
     window.draw(m_promptText);
     window.draw(m_inputText);
+    window.draw(m_continueText);
 }

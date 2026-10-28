@@ -1,6 +1,7 @@
 #pragma once
 #include "Entity.h"
 #include "Bullet.h"
+#include <cstddef>
 #include <memory>
 #include <random>
 #include <vector>
@@ -14,6 +15,7 @@ public:
     ~Enemy() override = default;
 
     void update(float dt) override;
+    void draw(sf::RenderWindow& window) const override;
 
     std::vector<std::unique_ptr<Bullet>> shoot();
 
@@ -33,8 +35,23 @@ public:
 
     void configureAsBoss(int level);
     bool isBoss() const { return m_isBoss; }
+    void enableReboundBehavior(float angleOffsetDegrees = 0.f);
+    bool hasReboundBehavior() const { return m_isRebounder; }
+    void enableSniperBehavior();
+    bool isSniper() const { return m_isSniper; }
+    bool isSniperAiming() const { return m_isSniper && m_sniperAiming; }
+    void enableDividerBehavior() { m_isDivider = true; }
+    bool isDivider() const { return m_isDivider; }
+    void setFormationSlot(std::size_t slot) { m_formationSlot = slot; m_hasFormationSlot = true; }
+    bool hasFormationSlot() const { return m_hasFormationSlot; }
+    std::size_t getFormationSlot() const { return m_formationSlot; }
 
 private:
+    enum class ReboundState {
+        Charging,
+        Tired
+    };
+
     const sf::Texture *m_bulletTexture;
 
     int m_hp = 1;
@@ -52,6 +69,22 @@ private:
 
     float m_timeAlive = 0.f;
     bool m_isBoss = false;
+    bool m_isRebounder = false;
+    bool m_reboundTargetReady = false;
+    ReboundState m_reboundState = ReboundState::Charging;
+    int m_reboundCount = 0;
+    float m_reboundTimer = 0.f;
+    float m_reboundSpeed = 340.f;
+    float m_reboundAngleOffset = 0.f;
+    bool m_isSniper = false;
+    bool m_sniperAiming = false;
+    bool m_sniperFireReady = false;
+    float m_sniperAimTimer = 0.f;
+    sf::Vector2f m_sniperAimPosition;
+    sf::Vector2f m_sniperResumeVelocity;
+    bool m_isDivider = false;
+    bool m_hasFormationSlot = false;
+    std::size_t m_formationSlot = 0;
     sf::Vector2f m_targetPosition;
     bool m_hasTarget = false;
     float m_bossRetuneTimer = 0.f;
@@ -69,6 +102,14 @@ private:
     float m_bossTargetPhaseY = 0.f;
     std::mt19937 m_bossRng;
     unsigned int m_bossShotPattern = 0;
+    unsigned int m_bossPatternShotCount = 0;
+    bool m_bossTelegraphActive = false;
+    bool m_bossFireReady = false;
+    float m_bossTelegraphTimer = 0.f;
+    sf::Vector2f m_bossAimPosition;
 
     void retuneBossTrajectory();
+    void updateRebounder(float dt);
+    void drawAimLine(sf::RenderWindow& window, const sf::Vector2f& target,
+                     const sf::Color& color) const;
 };

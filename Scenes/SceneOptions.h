@@ -18,6 +18,10 @@ public:
 private:
     void refreshLabels();
     void updateLayout(const sf::Vector2u& windowSize);
+    void syncFromGame(const Game& game);
+    void updateSelectionColors();
+    void adjustSelectedOption(Game& game, int direction);
+    int optionAtPosition(const sf::Vector2f& position) const;
 
     sf::Font m_font;
     sf::Text m_title;
@@ -32,6 +36,7 @@ private:
     bool m_fontLoaded = false;
     bool m_layoutInitialized = false;
     int m_selectedOption = 0;
+    int m_lastHoveredOption = -1;
     int m_masterVolume = 100;
     int m_musicVolume = 100;
     int m_sfxVolume = 100;

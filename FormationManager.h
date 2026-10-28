@@ -31,6 +31,7 @@ private:
     sf::Vector2f m_center;
     float m_direction;
     float m_verticalOffset;
+    std::size_t m_formationSize;
 };
 
 #endif

@@ -1,10 +1,10 @@
 #include "SceneOptions.h"
 #include "SceneMenu.h"
 #include "../Game.h"
-#include "../Managers/AssetManager.h"
 #include "../Managers/AudioManager.h"
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <sstream>
@@ -12,6 +12,10 @@
 namespace {
     const int kWidths[] = {800, 1024, 1280, 1366, 1600, 1920};
     const int kHeights[] = {600, 768, 720, 768, 900, 1080};
+    const sf::Color kMenuNormal(182, 255, 255);
+    const sf::Color kMenuSelected(12, 183, 242);
+    const sf::Color kMenuTitle = sf::Color::White;
+
     bool loadProjectFont(sf::Font& font) {
         return font.loadFromFile("Resources/Tr2n.ttf");
     }
@@ -30,8 +34,6 @@ SceneOptions::SceneOptions()
     , m_sfxVolume(100)
     , m_hudSize(50)
 {
-    (void)AssetManager::instance().getTexture("hud.png", sf::Color(70, 70, 70), 800, 120);
-
     if (!loadProjectFont(m_font)) {
         return;
     }
@@ -40,38 +42,38 @@ SceneOptions::SceneOptions()
     m_title.setFont(m_font);
     m_title.setCharacterSize(48);
     m_title.setString("OPCIONES");
-    m_title.setFillColor(sf::Color::White);
+    m_title.setFillColor(kMenuTitle);
 
     m_masterText.setFont(m_font);
-    m_masterText.setCharacterSize(24);
-    m_masterText.setFillColor(sf::Color::White);
+    m_masterText.setCharacterSize(30);
+    m_masterText.setFillColor(kMenuNormal);
 
     m_musicText.setFont(m_font);
-    m_musicText.setCharacterSize(24);
-    m_musicText.setFillColor(sf::Color::White);
+    m_musicText.setCharacterSize(30);
+    m_musicText.setFillColor(kMenuNormal);
 
     m_sfxText.setFont(m_font);
-    m_sfxText.setCharacterSize(24);
-    m_sfxText.setFillColor(sf::Color::White);
+    m_sfxText.setCharacterSize(30);
+    m_sfxText.setFillColor(kMenuNormal);
 
     m_hudSizeText.setFont(m_font);
-    m_hudSizeText.setCharacterSize(24);
-    m_hudSizeText.setFillColor(sf::Color::White);
-    m_resolutionText.setFillColor(sf::Color::White);
-    m_fullscreenText.setFillColor(sf::Color::White);
+    m_hudSizeText.setCharacterSize(30);
+    m_hudSizeText.setFillColor(kMenuNormal);
+    m_resolutionText.setFillColor(kMenuNormal);
+    m_fullscreenText.setFillColor(kMenuNormal);
 
     m_resolutionText.setFont(m_font);
-    m_resolutionText.setCharacterSize(24);
-    m_resolutionText.setFillColor(sf::Color::White);
+    m_resolutionText.setCharacterSize(30);
+    m_resolutionText.setFillColor(kMenuNormal);
 
     m_fullscreenText.setFont(m_font);
-    m_fullscreenText.setCharacterSize(24);
-    m_fullscreenText.setFillColor(sf::Color::White);
+    m_fullscreenText.setCharacterSize(30);
+    m_fullscreenText.setFillColor(kMenuNormal);
 
     m_exitText.setFont(m_font);
-    m_exitText.setCharacterSize(24);
+    m_exitText.setCharacterSize(30);
     m_exitText.setString("VOLVER");
-    m_exitText.setFillColor(sf::Color::White);
+    m_exitText.setFillColor(kMenuNormal);
 
     m_masterVolume = 100;
     m_musicVolume = 100;
@@ -97,9 +99,9 @@ void SceneOptions::updateLayout(const sf::Vector2u& windowSize) {
                  static_cast<float>(windowSize.y) / 600.f)));
     const float centerX = static_cast<float>(windowSize.x) * 0.5f;
     const float centerY = static_cast<float>(windowSize.y) * 0.5f;
-    const unsigned int bodySize = std::max(12u, static_cast<unsigned int>(24.f * scale));
+    const unsigned int bodySize = std::max(12u, static_cast<unsigned int>(30.f * scale));
 
-    m_title.setCharacterSize(static_cast<unsigned int>(42.f * scale));
+    m_title.setCharacterSize(static_cast<unsigned int>(48.f * scale));
     m_masterText.setCharacterSize(bodySize);
     m_musicText.setCharacterSize(bodySize);
     m_sfxText.setCharacterSize(bodySize);
@@ -108,8 +110,8 @@ void SceneOptions::updateLayout(const sf::Vector2u& windowSize) {
     m_fullscreenText.setCharacterSize(bodySize);
     m_exitText.setCharacterSize(bodySize);
 
-    centerText(m_title, centerX, centerY - 190.f * scale);
-    const float firstOptionY = centerY - 105.f * scale;
+    centerText(m_title, centerX, centerY - 205.f * scale);
+    const float firstOptionY = centerY - 125.f * scale;
     const float optionSpacing = 47.f * scale;
     centerText(m_masterText, centerX, firstOptionY);
     centerText(m_musicText, centerX, firstOptionY + optionSpacing);
@@ -122,15 +124,15 @@ void SceneOptions::updateLayout(const sf::Vector2u& windowSize) {
 
 void SceneOptions::refreshLabels() {
     std::stringstream ss;
-    ss << "VOL MEN MASTER: " << m_masterVolume << "%";
+    ss << "MASTER: " << m_masterVolume << "%";
     m_masterText.setString(ss.str());
 
     ss.str("");
-    ss << "VOL MUSICA (.ogg): " << m_musicVolume << "%";
+    ss << "MUSIC: " << m_musicVolume << "%";
     m_musicText.setString(ss.str());
 
     ss.str("");
-    ss << "VOL SFX (.wav): " << m_sfxVolume << "%";
+    ss << "SFX: " << m_sfxVolume << "%";
     m_sfxText.setString(ss.str());
 
     ss.str("");
@@ -157,11 +159,7 @@ void SceneOptions::refreshLabels() {
     }
 }
 
-void SceneOptions::handleEvent(const sf::Event& event, Game& game) {
-    if (event.type != sf::Event::KeyPressed) {
-        return;
-    }
-
+void SceneOptions::syncFromGame(const Game& game) {
     m_masterVolume = game.getMasterVolume();
     m_musicVolume = game.getMusicVolume();
     m_sfxVolume = game.getSfxVolume();
@@ -174,110 +172,130 @@ void SceneOptions::handleEvent(const sf::Event& event, Game& game) {
         }
     }
     m_fullscreen = game.isFullscreen();
+}
 
-    if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W) {
-        m_selectedOption = std::max(0, m_selectedOption - 1);
-        AudioManager::instance().playSfx("selecting.wav");
-    } else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S) {
-        m_selectedOption = std::min(6, m_selectedOption + 1);
-        AudioManager::instance().playSfx("selecting.wav");
-    } else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A) {
-        switch (m_selectedOption) {
-            case 0:
-                m_masterVolume = std::max(0, m_masterVolume - 10);
-                game.setMasterVolume(m_masterVolume);
-                break;
-            case 1:
-                m_musicVolume = std::max(0, m_musicVolume - 10);
-                game.setMusicVolume(m_musicVolume);
-                break;
-            case 2:
-                m_sfxVolume = std::max(0, m_sfxVolume - 10);
-                game.setSfxVolume(m_sfxVolume);
-                break;
-            case 3:
-                m_hudSize = std::max(10, m_hudSize - 5);
-                game.setHudSize(m_hudSize);
-                break;
-            case 4:
-                m_resolutionIndex = (m_resolutionIndex + 5) % 6;
-                game.setDisplaySettings(kWidths[m_resolutionIndex], kHeights[m_resolutionIndex], m_fullscreen);
-                break;
-            case 5:
-                m_fullscreen = !m_fullscreen;
-                game.setDisplaySettings(kWidths[m_resolutionIndex], kHeights[m_resolutionIndex], m_fullscreen);
-                break;
-            default:
-                break;
+void SceneOptions::adjustSelectedOption(Game& game, int direction) {
+    switch (m_selectedOption) {
+        case 0:
+            m_masterVolume = std::max(0, std::min(100, m_masterVolume + direction * 10));
+            game.setMasterVolume(m_masterVolume);
+            break;
+        case 1:
+            m_musicVolume = std::max(0, std::min(100, m_musicVolume + direction * 10));
+            game.setMusicVolume(m_musicVolume);
+            break;
+        case 2:
+            m_sfxVolume = std::max(0, std::min(100, m_sfxVolume + direction * 10));
+            game.setSfxVolume(m_sfxVolume);
+            break;
+        case 3:
+            m_hudSize = std::max(10, std::min(100, m_hudSize + direction * 5));
+            game.setHudSize(m_hudSize);
+            break;
+        case 4:
+            m_resolutionIndex = (m_resolutionIndex + direction + 6) % 6;
+            game.setDisplaySettings(kWidths[m_resolutionIndex], kHeights[m_resolutionIndex], m_fullscreen);
+            break;
+        case 5:
+            m_fullscreen = !m_fullscreen;
+            game.setDisplaySettings(kWidths[m_resolutionIndex], kHeights[m_resolutionIndex], m_fullscreen);
+            break;
+        default:
+            break;
+    }
+}
+
+int SceneOptions::optionAtPosition(const sf::Vector2f& position) const {
+    const sf::Text* options[] = {
+        &m_masterText, &m_musicText, &m_sfxText, &m_hudSizeText,
+        &m_resolutionText, &m_fullscreenText, &m_exitText
+    };
+    for (int i = 0; i < 7; ++i) {
+        if (options[i]->getGlobalBounds().contains(position)) {
+            return i;
         }
-    } else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D) {
-        switch (m_selectedOption) {
-            case 0:
-                m_masterVolume = std::min(100, m_masterVolume + 10);
-                game.setMasterVolume(m_masterVolume);
-                break;
-            case 1:
-                m_musicVolume = std::min(100, m_musicVolume + 10);
-                game.setMusicVolume(m_musicVolume);
-                break;
-            case 2:
-                m_sfxVolume = std::min(100, m_sfxVolume + 10);
-                game.setSfxVolume(m_sfxVolume);
-                break;
-            case 3:
-                m_hudSize = std::min(100, m_hudSize + 5);
-                game.setHudSize(m_hudSize);
-                break;
-            case 4:
-                m_resolutionIndex = (m_resolutionIndex + 1) % 6;
-                game.setDisplaySettings(kWidths[m_resolutionIndex], kHeights[m_resolutionIndex], m_fullscreen);
-                break;
-            case 5:
-                m_fullscreen = !m_fullscreen;
-                game.setDisplaySettings(kWidths[m_resolutionIndex], kHeights[m_resolutionIndex], m_fullscreen);
-                break;
-            default:
-                break;
-        }
-    } else if (event.key.code == sf::Keyboard::Return || event.key.code == sf::Keyboard::Space) {
-        if (m_selectedOption == 6) {
+    }
+    return -1;
+}
+
+void SceneOptions::updateSelectionColors() {
+    sf::Text* options[] = {
+        &m_masterText, &m_musicText, &m_sfxText, &m_hudSizeText,
+        &m_resolutionText, &m_fullscreenText, &m_exitText
+    };
+    for (int i = 0; i < 7; ++i) {
+        options[i]->setFillColor(i == m_selectedOption ? kMenuSelected : kMenuNormal);
+    }
+}
+
+void SceneOptions::handleEvent(const sf::Event& event, Game& game) {
+    syncFromGame(game);
+    updateLayout(game.getWindow().getSize());
+
+    if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W) {
+            m_selectedOption = std::max(0, m_selectedOption - 1);
+            AudioManager::instance().playSfx("selecting.wav");
+        } else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S) {
+            m_selectedOption = std::min(6, m_selectedOption + 1);
+            AudioManager::instance().playSfx("selecting.wav");
+        } else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A) {
+            adjustSelectedOption(game, -1);
+        } else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D) {
+            adjustSelectedOption(game, 1);
+        } else if ((event.key.code == sf::Keyboard::Return
+                    || event.key.code == sf::Keyboard::Space)
+                   && m_selectedOption == 6) {
+            game.setScene(new SceneMenu());
+        } else if (event.key.code == sf::Keyboard::Escape) {
             game.setScene(new SceneMenu());
         }
-    } else if (event.key.code == sf::Keyboard::Escape) {
-        game.setScene(new SceneMenu());
+    } else if (event.type == sf::Event::MouseMoved) {
+        const sf::Vector2f position(static_cast<float>(event.mouseMove.x),
+                                    static_cast<float>(event.mouseMove.y));
+        const int hoveredOption = optionAtPosition(position);
+        if (hoveredOption != m_lastHoveredOption) {
+            if (hoveredOption >= 0) {
+                AudioManager::instance().playSfx("selecting.wav");
+            }
+            m_lastHoveredOption = hoveredOption;
+        }
+        if (hoveredOption >= 0) {
+            m_selectedOption = hoveredOption;
+        }
+    } else if (event.type == sf::Event::MouseButtonPressed
+               && event.mouseButton.button == sf::Mouse::Left) {
+        const sf::Vector2f position(static_cast<float>(event.mouseButton.x),
+                                    static_cast<float>(event.mouseButton.y));
+        const int clickedOption = optionAtPosition(position);
+        if (clickedOption >= 0) {
+            m_selectedOption = clickedOption;
+            if (m_selectedOption == 6) {
+                game.setScene(new SceneMenu());
+            } else if (m_selectedOption == 5) {
+                adjustSelectedOption(game, 1);
+            } else {
+                const sf::Text* options[] = {
+                    &m_masterText, &m_musicText, &m_sfxText, &m_hudSizeText,
+                    &m_resolutionText, &m_fullscreenText
+                };
+                const sf::FloatRect bounds = options[m_selectedOption]->getGlobalBounds();
+                const int direction = position.x < bounds.left + bounds.width * 0.5f ? -1 : 1;
+                adjustSelectedOption(game, direction);
+            }
+        }
     }
 
     refreshLabels();
+    updateSelectionColors();
 }
 
 void SceneOptions::update(float dt, Game& game) {
     (void)dt;
 
-    m_masterVolume = game.getMasterVolume();
-    m_musicVolume = game.getMusicVolume();
-    m_sfxVolume = game.getSfxVolume();
-    m_hudSize = game.getHudSize();
-    m_fullscreen = game.isFullscreen();
+    syncFromGame(game);
     refreshLabels();
-
-    m_masterText.setFillColor(sf::Color::White);
-    m_musicText.setFillColor(sf::Color::White);
-    m_sfxText.setFillColor(sf::Color::White);
-    m_hudSizeText.setFillColor(sf::Color::White);
-    m_resolutionText.setFillColor(sf::Color::White);
-    m_fullscreenText.setFillColor(sf::Color::White);
-    m_exitText.setFillColor(sf::Color::White);
-
-    switch (m_selectedOption) {
-        case 0: m_masterText.setFillColor(sf::Color::Yellow); break;
-        case 1: m_musicText.setFillColor(sf::Color::Yellow); break;
-        case 2: m_sfxText.setFillColor(sf::Color::Yellow); break;
-        case 3: m_hudSizeText.setFillColor(sf::Color::Yellow); break;
-        case 4: m_resolutionText.setFillColor(sf::Color::Yellow); break;
-        case 5: m_fullscreenText.setFillColor(sf::Color::Yellow); break;
-        case 6: m_exitText.setFillColor(sf::Color::Yellow); break;
-        default: break;
-    }
+    updateSelectionColors();
 }
 
 void SceneOptions::draw(sf::RenderWindow& window) {
@@ -286,14 +304,11 @@ void SceneOptions::draw(sf::RenderWindow& window) {
     }
 
     const sf::Vector2u windowSize = window.getSize();
-    const float panelWidth = std::max(0.f, static_cast<float>(windowSize.x) - 40.f);
-    const float panelHeight = std::max(0.f, static_cast<float>(windowSize.y) - 40.f);
-    sf::RectangleShape panel(sf::Vector2f(panelWidth, panelHeight));
-    panel.setFillColor(sf::Color(45, 45, 55));
-    panel.setPosition((static_cast<float>(windowSize.x) - panelWidth) * 0.5f,
-                      (static_cast<float>(windowSize.y) - panelHeight) * 0.5f);
-    window.draw(panel);
-
+    sf::RectangleShape background(sf::Vector2f(static_cast<float>(windowSize.x),
+                                               static_cast<float>(windowSize.y)));
+    background.setFillColor(sf::Color(5, 12, 22));
+    background.setPosition(0.f, 0.f);
+    window.draw(background);
     updateLayout(windowSize);
     window.draw(m_title);
     window.draw(m_masterText);

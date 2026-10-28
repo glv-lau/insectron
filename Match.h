@@ -68,6 +68,8 @@ private:
     void spawnWave();
     void spawnNormalWave(int waveIndex);
     void spawnBoss();
+    void spawnBossMinions(const sf::Vector2f& bossPosition);
+    void spawnDividerChildren(const sf::Vector2f& position);
     void tryDropPowerUp(const sf::Vector2f& pos, bool guaranteed = false);
     void cleanupDead();
     void checkCollisions();
